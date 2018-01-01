@@ -34,18 +34,22 @@ class Thekdar {
       throw new Error(`No task found with id ${taskId}`);
     }
 
-    this._getFreeWorker();
-    task.execute(function done() {
-      this.removeTask(taskId);
-    });
+    // this._getFreeWorker(task.getType());
+    // task.execute(function done() {
+    // this.removeTask(taskId);
+    // });
   }
 
   _getFreeWorker(task) {
-    let worker = this.workers.get(task.getType());
-    if (!worker) {
-      this.workers.set(task.getType(), new Map());
+    const taskType = task.getType();
+    let workers = this.workers.get(taskType);
+    let worker;
+    if (!workers) {
+      this.workers.set(taskType, new Map());
+      worker = this._createWorker(taskType);
+      this.workers.getType(taskType).set(uuid(), worker);
+      return worker;
     }
-    worker = this.workers.getType(task.getType());
   }
 
   _createWorker(type) {

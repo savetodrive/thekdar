@@ -11,4 +11,4 @@ task.setType(Task.TYPE_FORK);
 project.addTask(task);
 
 console.log(project.tasks);
-console.log(project._createWorker(Task.TYPE_FORK));
+console.log(project.execute(task.getId()));

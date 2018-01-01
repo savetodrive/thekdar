@@ -1,4 +1,3 @@
-console.log("hello world");
-setInterval(function() {
-  console.log("gello");
-}, 1000);
+module.exports = function() {
+  console.log("wllo");
+};
