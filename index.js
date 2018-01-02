@@ -8,7 +8,19 @@ task.run(function() {
   console.log("hello world");
 });
 task.setType(Task.TYPE_FORK);
+task.setMessage({
+  type: "upload",
+  url: "hello world"
+});
+const task1 = new Task("uploadFile");
+task1.run(function() {
+  console.log("hello world");
+});
+task1.setType(Task.TYPE_FORK);
+task1.setMessage({
+  type: "upload",
+  url: "hello world"
+});
 project.addTask(task);
-
-console.log(project.tasks);
-console.log(project.execute(task.getId()));
+project.addTask(task1);
+console.log(project);

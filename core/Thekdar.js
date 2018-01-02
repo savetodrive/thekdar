@@ -4,9 +4,9 @@ const Worker = require("./workers");
 
 class Thekdar {
   constructor() {
-    this.tasks = new Map();
-    this.workersTaskMap = new Map();
     this.workers = new Map();
+    this.tasks = new Map();
+    this.workerTaskMap = new Map();
   }
 
   addTask(task) {
@@ -18,26 +18,17 @@ class Thekdar {
     }
     const taskId = uuid();
     task.setId(taskId);
+    const worker = this._getFreeWorker(task);
+    if (!worker) {
+      return null;
+    }
     this.tasks.set(taskId, task);
-    const taskType = task.getType();
-    if (!this.workersTaskMap.get(taskType)) {
-      this.workersTaskMap.set(taskType, []);
+    worker.addTask(this.tasks.get(taskId));
+    if (!this.workerTaskMap.get(worker.getId())) {
+      this.workerTaskMap.set(worker.getId(), []);
     }
-
-    this.workersTaskMap.get(taskType).push(taskId);
-    return taskId;
-  }
-
-  execute(taskId) {
-    const task = this.tasks.get(taskId);
-    if (!task) {
-      throw new Error(`No task found with id ${taskId}`);
-    }
-
-    // this._getFreeWorker(task.getType());
-    // task.execute(function done() {
-    // this.removeTask(taskId);
-    // });
+    this.workerTaskMap.get(worker.getId()).push(task.getId());
+    return worker;
   }
 
   _getFreeWorker(task) {
@@ -47,13 +38,33 @@ class Thekdar {
     if (!workers) {
       this.workers.set(taskType, new Map());
       worker = this._createWorker(taskType);
-      this.workers.getType(taskType).set(uuid(), worker);
       return worker;
     }
+    for (let workerTemp of this.workers.get(taskType).entries()) {
+      let lWorker = this.workerTaskMap.get(workerTemp[1].getId());
+      if (lWorker.length > Thekdar.MAX_TASK_PER_WORKER) {
+        if (this.workersTaskMap.size > Thekdar.MAX_WORKER) {
+          console.warn("Max worker exceeded");
+          worker = null;
+          break;
+        } else {
+          worker = this._createWorker(taskType);
+          break;
+        }
+      } else {
+        worker = workerTemp[1];
+        break;
+      }
+    }
+    return worker;
   }
 
   _createWorker(type) {
-    return new Worker(type).create();
+    const id = uuid();
+    const worker = new Worker(type, id);
+    this.workers.get(type).set(id, worker);
+    worker.create();
+    return worker;
   }
   removeTask(taskId) {
     const task = this.tasks.get(taskId);

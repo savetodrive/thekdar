@@ -4,8 +4,10 @@ const path = require("path");
 const { fork } = require("child_process");
 
 class Worker {
-  constructor(type) {
+  constructor(type, id) {
     this._type = type;
+    this._tasks = new Map();
+    this._id = id;
   }
 
   create() {
@@ -16,6 +18,14 @@ class Worker {
       default:
         break;
     }
+  }
+
+  addTask(task) {
+    this._tasks.set(task.getId(), task);
+  }
+
+  getId() {
+    return this._id;
   }
 }
 
