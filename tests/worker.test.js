@@ -11,11 +11,12 @@ describe("Test Worker", () => {
 
   it("should add task", () => {
     const worker = new Worker("fork", uuid());
-    worker.addTask({
-      getId() {
-        return uuid();
-      }
-    });
+    const taskMock = {};
+    taskMock.getId = jest.fn();
+    worker.addTask(taskMock);
+    taskMock.getId.mockReturnValueOnce(1);
+    expect(taskMock.getId).toBeCalled();
+    expect(taskMock.getId).toHaveBeenCalledTimes(1);
     expect(worker._tasks.size).toBe(1);
   });
   // it("should add a task", () => {});

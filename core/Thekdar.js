@@ -43,7 +43,7 @@ class Thekdar {
     for (let workerTemp of this.workers.get(taskType).entries()) {
       let lWorker = this.workerTaskMap.get(workerTemp[1].getId());
       if (lWorker.length > Thekdar.MAX_TASK_PER_WORKER) {
-        if (this.workersTaskMap.size > Thekdar.MAX_WORKER) {
+        if (this.workersTaskMap.size > Thekdar.MAX_WORKERS) {
           console.warn("Max worker exceeded");
           worker = null;
           break;
@@ -85,5 +85,5 @@ class Thekdar {
   }
 }
 Thekdar.MAX_TASK_PER_WORKER = 10;
-Thekdar.MAX_WORKER = 20;
+Thekdar.MAX_WORKERS = 20;
 module.exports = Thekdar;
