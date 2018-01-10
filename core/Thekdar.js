@@ -1,11 +1,13 @@
 const uuid = require("uuid");
 const Task = require("./Task");
 const Worker = require("./workers");
+const EventEmitter = require("events").EventEmitter;
 
-class Thekdar {
+class Thekdar extends EventEmitter {
   constructor() {
-    this.workers = new Map();
-    this.tasks = new Map();
+    super();
+    this.workers = new Map(); // Workers
+    this.tasks = new Map(); // Number of tasks
     this.workerTaskMap = new Map();
   }
 
@@ -28,35 +30,37 @@ class Thekdar {
       this.workerTaskMap.set(worker.getId(), []);
     }
     this.workerTaskMap.get(worker.getId()).push(task.getId());
+    this.emit("add", { worker });
     return worker;
   }
 
   _getFreeWorker(task) {
+    if (this.workerTaskMap.size > Thekdar.MAX_WORKERS) {
+      return null;
+    }
     const taskType = task.getType();
     let workers = this.workers.get(taskType);
-    let worker;
+    let newWorker;
     if (!workers) {
       this.workers.set(taskType, new Map());
-      worker = this._createWorker(taskType);
-      return worker;
+      newWorker = this._createWorker(taskType);
+      return newWorker;
     }
-    for (let workerTemp of this.workers.get(taskType).entries()) {
-      let lWorker = this.workerTaskMap.get(workerTemp[1].getId());
-      if (lWorker.length > Thekdar.MAX_TASK_PER_WORKER) {
-        if (this.workersTaskMap.size > Thekdar.MAX_WORKERS) {
-          console.warn("Max worker exceeded");
-          worker = null;
-          break;
-        } else {
-          worker = this._createWorker(taskType);
-          break;
-        }
+    for (let [index, worker] of this.workers.get(taskType).entries()) {
+      let lWorker = this.workerTaskMap.get(worker.getId());
+      if (lWorker.length === Thekdar.MAX_TASK_PER_WORKER - 1) {
+        const nextWorker = this._createWorker(taskType);
+        this.workerTaskMap.set(nextWorker.getId(), []);
+      }
+      if (lWorker.length >= Thekdar.MAX_TASK_PER_WORKER) {
+        newWorker = null;
+        continue;
       } else {
-        worker = workerTemp[1];
+        newWorker = worker;
         break;
       }
     }
-    return worker;
+    return newWorker;
   }
 
   _createWorker(type) {

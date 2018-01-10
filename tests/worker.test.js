@@ -1,4 +1,3 @@
-const childProcess = require("child_process");
 const Worker = require("../core/workers");
 const uuid = require("uuid");
 
@@ -19,5 +18,4 @@ describe("Test Worker", () => {
     expect(taskMock.getId).toHaveBeenCalledTimes(1);
     expect(worker._tasks.size).toBe(1);
   });
-  // it("should add a task", () => {});
 });
