@@ -1,7 +1,9 @@
 const uuid = require("uuid");
+const EventEmitter = require("events");
+const util = require("util");
 const Task = require("./Task");
 const Worker = require("./workers");
-const EventEmitter = require("events").EventEmitter;
+const debug = require("debug")("Thekdar:main");
 
 class Thekdar extends EventEmitter {
   constructor() {
@@ -80,6 +82,7 @@ class Thekdar extends EventEmitter {
       .get(task.getType())
       .splice(this.getIndexOfTask(task), 1);
     this.tasks.delete(taskId);
+    debug("A task deleted with id of %s", taskId);
   }
 
   getIndexOfTask(task) {

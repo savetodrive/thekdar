@@ -9,6 +9,7 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
+        "debug": "^3.1.0",
         "uuid": "^3.1.0"
     },
     "devDependencies": {

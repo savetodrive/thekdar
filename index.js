@@ -16,5 +16,7 @@ for (let i = 0; i < Thekdar.MAX_TASK_PER_WORKER; i++) {
   task.getId = () => task.id;
   thekdar.addTask(task);
 }
-
-thekdar.on("add", console.log);
+thekdar.emit("add", "sas");
+thekdar.on("add", () => {
+  console.log("hello world");
+});
