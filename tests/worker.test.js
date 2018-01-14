@@ -1,9 +1,11 @@
-const Worker = require("../core/workers");
+const Worker = require("../core/Worker");
 const uuid = require("uuid");
+const FORK_ADDRESS = "./examples/types/fork.js";
 
 describe("Test Worker", () => {
   it("should create a worker", () => {
     const worker = new Worker("fork", uuid());
+    worker.setAddress(FORK_ADDRESS);
     worker.create();
     expect(worker._worker).toHaveProperty("pid");
   });

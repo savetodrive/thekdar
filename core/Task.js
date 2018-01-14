@@ -6,8 +6,11 @@ class Task {
     this._type = null;
   }
 
-  setMessage(message) {
-    this._message = message;
+  setData(message) {
+    this._data = message;
+  }
+  getData() {
+    return this._data;
   }
   setType(type) {
     this._type = type;
