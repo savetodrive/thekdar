@@ -32,3 +32,5 @@ for (let i = 0; i < 4; i++) {
 //   task.getId = () => task.id;
 //   thekdar.addTask(task);
 // }
+exports = Thekdar;
+exports = Task;
