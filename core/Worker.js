@@ -71,7 +71,7 @@ class Worker {
     }
   }
   removeTask(taskId) {
-    this._tasks.delete(taskId);
+    return this._tasks.delete(taskId);
   }
 }
 

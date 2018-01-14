@@ -49,6 +49,11 @@ class Thekdar extends EventEmitter {
 
   _getFreeWorker(task, workerAddressIndex) {
     if (this._workerTaskLookup.size > Thekdar.MAX_WORKERS) {
+      debug(
+        `Maximum workers are working ${
+          this._workerTaskLookup.size
+        }, no further workers can work.`
+      );
       return null;
     }
     const taskType = task.getType();
@@ -115,6 +120,7 @@ class Thekdar extends EventEmitter {
         if (indexOfTask > -1) {
           workerId = tempWorkerId;
           workerTask.splice(indexOfTask, 1);
+          break;
         }
       }
       const worker = this._workers.get(task.getType()).get(workerId);
