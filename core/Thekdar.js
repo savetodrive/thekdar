@@ -17,7 +17,7 @@ class Thekdar extends EventEmitter {
     this._workersAddress = new Map();
   }
 
-  addWorkerAdress(address, workerType) {
+  addWorkerAddress(address, workerType) {
     if (!this._workersAddress.has(workerType)) {
       this._workersAddress.set(workerType, []);
     }
