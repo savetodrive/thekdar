@@ -2,7 +2,7 @@ const Thekdar = require("./core/Thekdar");
 const Task = require("./core/Task");
 
 const thekdar = new Thekdar();
-thekdar.addWorkerAdress("./examples/types/fork.js", Task.TYPE_FORK);
+thekdar.addWorkerAddress("./examples/types/fork.js", Task.TYPE_FORK);
 // thekdar.on("add", d => {
 // console.log(d);
 // });
@@ -32,3 +32,5 @@ for (let i = 0; i < 4; i++) {
 //   task.getId = () => task.id;
 //   thekdar.addTask(task);
 // }
+exports.Thekdar = Thekdar;
+exports.Task = Task;

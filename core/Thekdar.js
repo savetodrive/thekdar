@@ -17,7 +17,7 @@ class Thekdar extends EventEmitter {
     this._workersAddress = new Map();
   }
 
-  addWorkerAdress(address, workerType) {
+  addWorkerAddress(address, workerType) {
     if (!this._workersAddress.has(workerType)) {
       this._workersAddress.set(workerType, []);
     }
@@ -49,6 +49,11 @@ class Thekdar extends EventEmitter {
 
   _getFreeWorker(task, workerAddressIndex) {
     if (this._workerTaskLookup.size > Thekdar.MAX_WORKERS) {
+      debug(
+        `Maximum workers are working ${
+          this._workerTaskLookup.size
+        }, no further workers can work.`
+      );
       return null;
     }
     const taskType = task.getType();
@@ -106,15 +111,31 @@ class Thekdar extends EventEmitter {
     if (!task) {
       throw new Error(`No Task found with id ${taskId}`);
     }
-
-    this._workersTaskMap
-      .get(task.getType())
-      .splice(this.getIndexOfTask(task), 1);
-    this._tasks.delete(taskId);
-    debug("A task deleted with id of %s", taskId);
+    try {
+      const workersGroup = this._workers.get(task.getType()).keys();
+      let workerId = null;
+      for (const tempWorkerId of workersGroup) {
+        const workerTask = this._workerTaskLookup.get(tempWorkerId);
+        const indexOfTask = workerTask.findIndex(id => taskId);
+        if (indexOfTask > -1) {
+          workerId = tempWorkerId;
+          workerTask.splice(indexOfTask, 1);
+          break;
+        }
+      }
+      const worker = this._workers.get(task.getType()).get(workerId);
+      this._workers.get(task.getType()).delete(workerId);
+      worker.removeTask(taskId);
+      this._tasks.delete(taskId);
+      debug("A task deleted with id of %s", taskId);
+      return true;
+    } catch (er) {
+      debug(er);
+      return false;
+    }
   }
 
-  getIndexOfTask(task) {
+  getIndexOfTaskInLookup(task) {
     return this._workers
       .get(task.getType())
       .findIndex(taskId => taskId === task.getId());
@@ -147,8 +168,6 @@ class Thekdar extends EventEmitter {
       return false;
     }
   }
-
-  _removeTask(taskId) {}
 }
 Thekdar.MAX_TASK_PER_WORKER = 10;
 Thekdar.MAX_WORKERS = 20;

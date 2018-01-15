@@ -6,7 +6,7 @@ const FORK_ADDRESS = "./examples/types/fork.js";
 describe("Test Thekdar", () => {
   it("should create new thekdar instance", () => {
     const thekdar = new Thekdar();
-    thekdar.addWorkerAdress(FORK_ADDRESS, Task.TYPE_FORK);
+    thekdar.addWorkerAddress(FORK_ADDRESS, Task.TYPE_FORK);
     expect(thekdar._workers.size).toBe(0);
     expect(thekdar._tasks.size).toBe(0);
     expect(thekdar._workerTaskLookup.size).toBe(0);
@@ -14,7 +14,7 @@ describe("Test Thekdar", () => {
 
   it("should add task", () => {
     const thekdar = new Thekdar();
-    thekdar.addWorkerAdress(FORK_ADDRESS, Task.TYPE_FORK);
+    thekdar.addWorkerAddress(FORK_ADDRESS, Task.TYPE_FORK);
     const task = {};
     task.getType = jest.fn(() => Task.TYPE_FORK);
     task.setId = jest.fn(id => (task.id = id));
@@ -29,7 +29,7 @@ describe("Test Thekdar", () => {
   });
   it("should create three workers of fork type", () => {
     const thekdar = new Thekdar();
-    thekdar.addWorkerAdress(FORK_ADDRESS, Task.TYPE_FORK);
+    thekdar.addWorkerAddress(FORK_ADDRESS, Task.TYPE_FORK);
     const workers = [];
     for (let i = 0; i < 20; i++) {
       const task = {};
@@ -60,10 +60,9 @@ describe("Test Thekdar", () => {
     }
     expect(thekdar._workers.get(Task.TYPE_FORK).size).toBe(3);
   });
-  it("should throw error when maximum workers created", () => {});
   it("should only allow limited task per worker", () => {
     const thekdar = new Thekdar();
-    thekdar.addWorkerAdress(FORK_ADDRESS, Task.TYPE_FORK);
+    thekdar.addWorkerAddress(FORK_ADDRESS, Task.TYPE_FORK);
     for (let i = 0; i < 15; i++) {
       const task = {};
       task.getType = jest.fn(() => Task.TYPE_FORK);
@@ -77,7 +76,7 @@ describe("Test Thekdar", () => {
   });
   it("should throw error if task not provided or type not provided", () => {
     const thekdar = new Thekdar();
-    thekdar.addWorkerAdress(FORK_ADDRESS, Task.TYPE_FORK);
+    thekdar.addWorkerAddress(FORK_ADDRESS, Task.TYPE_FORK);
     const task = {};
     task.getType = jest.fn();
     expect(() => thekdar.addTask()).toThrow();
@@ -86,13 +85,68 @@ describe("Test Thekdar", () => {
   });
   it("should return free worker", () => {
     const thekdar = new Thekdar();
-    thekdar.addWorkerAdress(FORK_ADDRESS, Task.TYPE_FORK);
+    thekdar.addWorkerAddress(FORK_ADDRESS, Task.TYPE_FORK);
     const task = new Task();
     task.setType(Task.TYPE_FORK);
-    task.setMessage({});
+    task.setData({});
     const worker = thekdar._getFreeWorker(task);
     expect(worker).toBeInstanceOf(Worker);
     expect(worker).not.toBe(null);
     expect(worker).toHaveProperty("_id");
+  });
+  it("should throw error when maximum workers created", () => {
+    const thekdar = new Thekdar();
+    thekdar.addWorkerAddress(FORK_ADDRESS, Task.TYPE_FORK);
+    for (let i = 0; i < 250; i++) {
+      const task = {};
+      task.getType = jest.fn(() => Task.TYPE_FORK);
+      task.setId = jest.fn(id => (task.id = id));
+      task.getId = jest.fn(() => task.id);
+      const worker = thekdar.addTask(task);
+      if (i > 205) {
+        expect(thekdar.addTask(task)).toBe(null);
+        break;
+      }
+    }
+  });
+  it("should remove worker", () => {
+    const thekdar = new Thekdar();
+    thekdar.addWorkerAddress(FORK_ADDRESS, Task.TYPE_FORK);
+    const tasks = [];
+    const workers = [];
+    for (let i = 0; i < 15; i++) {
+      const task = {};
+      task.getType = jest.fn(() => Task.TYPE_FORK);
+      task.setId = jest.fn(id => (task.id = id));
+      task.getId = jest.fn(() => task.id);
+      tasks.push(task);
+      workers.push(thekdar.addTask(task));
+    }
+
+    expect(thekdar._workers.get(tasks[0].getType()).size).toBe(2);
+    expect(thekdar._workerTaskLookup.size).toBe(2);
+    const worker = workers[0];
+    expect(thekdar.removeWorker(worker.getId())).toBe(true);
+    expect(thekdar._workers.get(tasks[0].getType()).size).toBe(1);
+    expect(thekdar._workerTaskLookup.size).toBe(1);
+    expect(thekdar._tasks.size).toBe(5);
+  });
+  it("should remove task", () => {
+    const thekdar = new Thekdar();
+    thekdar.addWorkerAddress(FORK_ADDRESS, Task.TYPE_FORK);
+    const tasks = [];
+    const workers = [];
+    for (let i = 0; i < 15; i++) {
+      const task = {};
+      task.getType = jest.fn(() => Task.TYPE_FORK);
+      task.setId = jest.fn(id => (task.id = id));
+      task.getId = jest.fn(() => task.id);
+      tasks.push(task);
+      workers.push(thekdar.addTask(task));
+    }
+    expect(thekdar._workerTaskLookup.size).toBe(2);
+    expect(thekdar._tasks.size).toBe(15);
+    expect(thekdar.removeTask(tasks[0].getId())).toBe(true);
+    expect(thekdar._tasks.size).toBe(14);
   });
 });

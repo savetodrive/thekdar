@@ -48,7 +48,9 @@ class Worker {
       workerId: this.getId(),
       task: data
     };
-    this._worker.send(payload);
+    if (this._worker) {
+      this._worker.send(payload);
+    }
   }
   getId() {
     return this._id;
@@ -59,8 +61,17 @@ class Worker {
   }
 
   kill() {
-    this._worker.kill();
-    this._tasks.clear();
+    try {
+      this._tasks.clear();
+      this._worker.kill();
+      return true;
+    } catch (e) {
+      debug(e);
+      return false;
+    }
+  }
+  removeTask(taskId) {
+    return this._tasks.delete(taskId);
   }
 }
 

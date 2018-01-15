@@ -20,4 +20,15 @@ describe("Test Worker", () => {
     expect(taskMock.getId).toHaveBeenCalledTimes(1);
     expect(worker._tasks.size).toBe(1);
   });
+
+  it("should remove task from worker", () => {
+    const worker = new Worker("fork", uuid());
+    const taskMock = {};
+    taskMock.setId = jest.fn(id => (taskMock.id = id));
+    taskMock.getId = jest.fn(() => taskMock.id);
+    worker.addTask(taskMock);
+    expect(worker._tasks.size).toBe(1);
+    worker.removeTask(taskMock.getId());
+    expect(worker._tasks.size).toBe(0);
+  });
 });
