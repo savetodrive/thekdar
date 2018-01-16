@@ -102,10 +102,10 @@ describe("Test Thekdar", () => {
       task.getType = jest.fn(() => Task.TYPE_FORK);
       task.setId = jest.fn(id => (task.id = id));
       task.getId = jest.fn(() => task.id);
-      const worker = thekdar.addTask(task);
-      if (i > 205) {
-        expect(thekdar.addTask(task)).toBe(null);
-        break;
+      if (i > 199) {
+        expect(() => thekdar.addTask(task)).toThrow();
+      } else {
+        thekdar.addTask(task);
       }
     }
   });

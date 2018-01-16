@@ -33,28 +33,33 @@ class Thekdar extends EventEmitter {
     }
     const taskId = uuid();
     task.setId(taskId);
-    const worker = this._getFreeWorker(task, workerAddressIndex);
-    if (!worker) {
-      return null;
+    try {
+      const worker = this._getFreeWorker(task, workerAddressIndex);
+      if (!worker) {
+        return null;
+      }
+      this._tasks.set(taskId, task);
+      worker.addTask(this._tasks.get(taskId));
+      if (!this._workerTaskLookup.get(worker.getId())) {
+        this._workerTaskLookup.set(worker.getId(), []);
+      }
+      this._workerTaskLookup.get(worker.getId()).push(task.getId());
+      this.emit("add", { worker });
+      debug(`New task added, previous task count ${this._tasks.size}`);
+      return worker;
+    } catch (error) {
+      debug(error);
+      throw error;
     }
-    this._tasks.set(taskId, task);
-    worker.addTask(this._tasks.get(taskId));
-    if (!this._workerTaskLookup.get(worker.getId())) {
-      this._workerTaskLookup.set(worker.getId(), []);
-    }
-    this._workerTaskLookup.get(worker.getId()).push(task.getId());
-    this.emit("add", { worker });
-    return worker;
   }
 
   _getFreeWorker(task, workerAddressIndex) {
     if (this._workerTaskLookup.size > Thekdar.MAX_WORKERS) {
-      debug(
+      throw new Error(
         `Maximum workers are working ${
           this._workerTaskLookup.size
         }, no further workers can work.`
       );
-      return null;
     }
     const taskType = task.getType();
     let workers = this._workers.get(taskType);
@@ -97,6 +102,9 @@ class Thekdar extends EventEmitter {
     worker.setAddress(address);
     worker.create();
     worker.on(this.handleWorkerMessage(worker));
+    debug(
+      `New Worker created, previous worker count ${this._workerTaskLookup.size}`
+    );
     return worker;
   }
 
@@ -167,6 +175,14 @@ class Thekdar extends EventEmitter {
       debug(e);
       return false;
     }
+  }
+
+  getWorkers() {
+    return this._workerTaskLookup;
+  }
+
+  getTasks() {
+    return this._tasks;
   }
 }
 Thekdar.MAX_TASK_PER_WORKER = 10;
