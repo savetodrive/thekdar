@@ -1,5 +1,6 @@
 const uuid = require("uuid");
 const EventEmitter = require("events");
+const events = require("./events");
 const util = require("util");
 const Task = require("./Task");
 const Worker = require("./Worker");
@@ -36,6 +37,7 @@ class Thekdar extends EventEmitter {
     try {
       const worker = this._getFreeWorker(task, workerAddressIndex);
       if (!worker) {
+        debug("No Worker found.");
         return null;
       }
       this._tasks.set(taskId, task);
@@ -76,6 +78,7 @@ class Thekdar extends EventEmitter {
         this._workerTaskLookup.set(nextWorker.getId(), []);
       }
       if (lWorker.length >= Thekdar.MAX_TASK_PER_WORKER) {
+        debug("This worker has maximum task.");
         newWorker = null;
         continue;
       } else {
@@ -110,9 +113,19 @@ class Thekdar extends EventEmitter {
 
   handleWorkerMessage(worker) {
     return data => {
-      data.workerId = worker.getId();
+      switch (data.type) {
+        case events.TASK_ERROR:
+        case events.TASK_REMOVE:
+        case events.TASK_COMPLETE:
+          this.handleTaskComplete(data, worker);
+          break;
+      }
       this.emit("message", data);
     };
+  }
+
+  handleTaskComplete(data, worker) {
+    return this.removeTask(data.taskId);
   }
   removeTask(taskId) {
     const task = this._tasks.get(taskId);
@@ -132,7 +145,6 @@ class Thekdar extends EventEmitter {
         }
       }
       const worker = this._workers.get(task.getType()).get(workerId);
-      this._workers.get(task.getType()).delete(workerId);
       worker.removeTask(taskId);
       this._tasks.delete(taskId);
       debug("A task deleted with id of %s", taskId);
