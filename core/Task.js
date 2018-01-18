@@ -1,37 +1,28 @@
 class Task {
   constructor(name) {
     this._name = name;
-    this._id = null;
-    this._task = null;
-    this._type = null;
+    this.id = null;
+    this.type = null;
   }
 
   setData(message) {
-    this._data = message;
+    this.data = message;
   }
   getData() {
-    return this._data;
+    return this.data;
   }
   setType(type) {
-    this._type = type;
+    this.type = type;
   }
   getType(type) {
-    return this._type;
+    return this.type;
   }
   setId(id) {
-    this._id = id;
+    this.id = id;
   }
 
   getId() {
-    return this._id;
-  }
-
-  run(task) {
-    this._task = task;
-  }
-
-  _execute(...args) {
-    return this._task && this.task(...args);
+    return this.id;
   }
 }
 Task.TYPE_SPAWN = "spawn";
