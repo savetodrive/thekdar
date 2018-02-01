@@ -130,7 +130,8 @@ class Thekdar extends EventEmitter {
   removeTask(taskId) {
     const task = this._tasks.get(taskId);
     if (!task) {
-      throw new Error(`No Task found with id ${taskId}`);
+      debug(`No Task found with id ${taskId}`);
+      return false;
     }
     try {
       const workersGroup = this._workers.get(task.getType()).keys();
