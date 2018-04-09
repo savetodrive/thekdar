@@ -38,8 +38,6 @@ class Thekdar extends EventEmitter {
     task.setId(taskId);
     try {
       const worker = this._getFreeWorker(task, workerAddressIndex);
-      console.log(worker);
-      return;
       if (!worker) {
         debug('No Worker found.');
         return null;
@@ -77,43 +75,24 @@ class Thekdar extends EventEmitter {
       this._workerTaskLookup.set(worker.getId(), []);
     }
   }
-  _getFreeWorker(task, workerAddressIndex) {
-    if (this._workerTaskLookup.size > this._maxWorkers) {
-      throw new Error(
-        `Maximum workers are working ${
-          this._workerTaskLookup.size
-        }, no further workers can work.`
-      );
+  _getFreeWorker(task, workerTaskLength = 0) {
+    if (workerTaskLength === this._maxTaskPerWorker) {
+      debug(`All worker are working on with maximum work load.`);
+      return false;
     }
     const taskType = task.getType();
     let workers = this._workers.get(taskType);
     let newWorker;
-    // if (!workers) {
-    //   this._workers.set(taskType, new Map());
-    //   newWorker = this._createWorker(taskType, workerAddressIndex);
-    //   return newWorker;
-    // }
+
     for (let [workerId, works] of this._workerTaskLookup) {
-      if (!works.length) {
-        // If very first worker is free then return it
-        return workers.get(workerId);
+      if (works.length === workerTaskLength) {
+        newWorker = workers.get(workerId);
+        break;
       }
     }
-    // for (let [index, worker] of this._workers.get(taskType).entries()) {
-    //   let lWorker = this._workerTaskLookup.get(worker.getId());
-    //   if (lWorker.length === Thekdar.MAX_TASK_PER_WORKER - 1) {
-    //     const nextWorker = this._createWorker(taskType, workerAddressIndex);
-    //     this._workerTaskLookup.set(nextWorker.getId(), []);
-    //   }
-    //   if (lWorker.length >= Thekdar.MAX_TASK_PER_WORKER) {
-    //     debug('This worker has maximum task.');
-    //     newWorker = null;
-    //     continue;
-    //   } else {
-    //     newWorker = worker;
-    //     break;
-    //   }
-    // }
+    if (!newWorker) {
+      newWorker = this._getFreeWorker(task, workerTaskLength + 1);
+    }
     return newWorker;
   }
 
