@@ -1,10 +1,10 @@
-const uuid = require("uuid");
-const EventEmitter = require("events");
-const events = require("./events");
-const util = require("util");
-const Task = require("./Task");
-const Worker = require("./Worker");
-const debug = require("debug")("Thekdar:main");
+const uuid = require('uuid');
+const EventEmitter = require('events');
+const events = require('./events');
+const util = require('util');
+const Task = require('./Task');
+const Worker = require('./Worker');
+const debug = require('debug')('Thekdar:main');
 
 class Thekdar extends EventEmitter {
   constructor() {
@@ -16,6 +16,8 @@ class Thekdar extends EventEmitter {
     // How many task a worker have
     this._workerTaskLookup = new Map();
     this._workersAddress = new Map();
+    this._maxWorkers = 20;
+    this._maxTaskPerWorker = 10;
   }
 
   addWorkerAddress(address, workerType) {
@@ -27,26 +29,23 @@ class Thekdar extends EventEmitter {
   }
   addTask(task, workerAddressIndex = -1) {
     if (!task) {
-      throw new Error("Please provide task object instance of Task Class");
+      throw new Error('Please provide task object instance of Task Class');
     }
     if (!task.getType()) {
-      throw new Error("Please provide task type, can be fork, spwan, exec");
+      throw new Error('Please provide task type, can be fork, spwan, exec');
     }
     const taskId = uuid();
     task.setId(taskId);
     try {
       const worker = this._getFreeWorker(task, workerAddressIndex);
       if (!worker) {
-        debug("No Worker found.");
+        debug('No Worker found.');
         return null;
       }
       this._tasks.set(taskId, task);
       worker.addTask(this._tasks.get(taskId));
-      if (!this._workerTaskLookup.get(worker.getId())) {
-        this._workerTaskLookup.set(worker.getId(), []);
-      }
       this._workerTaskLookup.get(worker.getId()).push(task.getId());
-      this.emit("add", { worker });
+      this.emit('add', { worker });
       debug(`New task added, previous task count ${this._tasks.size}`);
       return worker;
     } catch (error) {
@@ -55,36 +54,44 @@ class Thekdar extends EventEmitter {
     }
   }
 
-  _getFreeWorker(task, workerAddressIndex) {
-    if (this._workerTaskLookup.size > Thekdar.MAX_WORKERS) {
-      throw new Error(
-        `Maximum workers are working ${
-          this._workerTaskLookup.size
-        }, no further workers can work.`
-      );
+  /**
+   * Deploy all workers at a time so later we don't
+   * have to create worker just before assigining task.
+   *
+   * @param {*} taskType
+   * @param {*} workerAddressIndex
+   */
+  deployWorkers(taskType = Task.TYPE_FORK, workerAddressIndex) {
+    if (this._isWorkersDeployed) {
+      return false;
+    }
+    this._isWorkersDeployed = true;
+    let workers = this._workers.get(taskType);
+    if (!workers) {
+      this._workers.set(taskType, new Map());
+    }
+    for (let i = 0; i < this._maxWorkers; i++) {
+      const worker = this._createWorker(Task.TYPE_FORK, workerAddressIndex);
+      this._workerTaskLookup.set(worker.getId(), []);
+    }
+  }
+  _getFreeWorker(task, workerTaskLength = 0) {
+    if (workerTaskLength === this._maxTaskPerWorker) {
+      debug(`All worker are working on with maximum work load.`);
+      return false;
     }
     const taskType = task.getType();
     let workers = this._workers.get(taskType);
     let newWorker;
-    if (!workers) {
-      this._workers.set(taskType, new Map());
-      newWorker = this._createWorker(taskType, workerAddressIndex);
-      return newWorker;
-    }
-    for (let [index, worker] of this._workers.get(taskType).entries()) {
-      let lWorker = this._workerTaskLookup.get(worker.getId());
-      if (lWorker.length === Thekdar.MAX_TASK_PER_WORKER - 1) {
-        const nextWorker = this._createWorker(taskType, workerAddressIndex);
-        this._workerTaskLookup.set(nextWorker.getId(), []);
-      }
-      if (lWorker.length >= Thekdar.MAX_TASK_PER_WORKER) {
-        debug("This worker has maximum task.");
-        newWorker = null;
-        continue;
-      } else {
-        newWorker = worker;
+
+    for (let [workerId, works] of this._workerTaskLookup) {
+      if (works.length === workerTaskLength) {
+        newWorker = workers.get(workerId);
         break;
       }
+    }
+    if (!newWorker) {
+      newWorker = this._getFreeWorker(task, workerTaskLength + 1);
     }
     return newWorker;
   }
@@ -100,7 +107,7 @@ class Thekdar extends EventEmitter {
     }
     const address = workerAddress[lWorkerAddressIndex];
     if (!address) {
-      throw new Error("Please specify address of worker");
+      throw new Error('Please specify address of worker');
     }
     worker.setAddress(address);
     worker.create();
@@ -120,7 +127,7 @@ class Thekdar extends EventEmitter {
           this.handleTaskComplete(data, worker);
           break;
       }
-      this.emit("message", data);
+      this.emit('message', data);
     };
   }
 
@@ -148,7 +155,7 @@ class Thekdar extends EventEmitter {
       const worker = this._workers.get(task.getType()).get(workerId);
       worker.removeTask(taskId);
       this._tasks.delete(taskId);
-      debug("A task deleted with id of %s", taskId);
+      debug('A task deleted with id of %s', taskId);
       return true;
     } catch (er) {
       debug(er);
@@ -167,7 +174,7 @@ class Thekdar extends EventEmitter {
     for (let workerGroup of this._workers.values()) {
       if (workerGroup.has(workerId)) {
         worker = workerGroup.get(workerId);
-        debug("Worker with %s id found, %o", workerId, worker);
+        debug('Worker with %s id found, %o', workerId, worker);
         break;
       }
     }
@@ -182,7 +189,7 @@ class Thekdar extends EventEmitter {
       });
       this._workers.get(worker.getType()).delete(workerId);
       this._workerTaskLookup.delete(workerId);
-      debug("Worker with id %s has been deleted", worker.getId());
+      debug('Worker with id %s has been deleted', worker.getId());
       return worker.kill();
     } catch (e) {
       debug(e);
@@ -196,6 +203,14 @@ class Thekdar extends EventEmitter {
 
   getTasks() {
     return this._tasks;
+  }
+
+  setMaxWorker(maxWorkers) {
+    this._maxWorkers = maxWorkers;
+  }
+
+  setMaxTaskPerWorker(maxTaskPerWorker) {
+    this._maxTaskPerWorker = maxTaskPerWorker;
   }
 }
 Thekdar.MAX_TASK_PER_WORKER = 10;

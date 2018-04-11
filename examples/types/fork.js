@@ -1,14 +1,12 @@
-const getPort = require("get-port");
-const http = require("http");
+process.on('message', data => {
+  // console.log(data);
 
-// const server = http.createServer((req, res) => {
-process.send({
-  type: "random",
-  time: Date.now()
+  setTimeout(() => {
+    process.send({
+      type: 'task:complete',
+      taskId: data.task.id,
+      workerId: data.workerId,
+      data: {},
+    });
+  }, Math.round(Math.random() * 5000) + 3000);
 });
-// res.end("hello world");
-// });
-// getPort().then(port => {
-// console.log(`Server listening on port ${port}`);
-// server.listen(port);
-// });
