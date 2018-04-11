@@ -1,8 +1,8 @@
-const Task = require("./Task");
-const path = require("path");
-const { fork } = require("child_process");
-const debug = require("debug")("Thekdar:worker");
-const events = require("./events");
+const Task = require('./Task');
+const path = require('path');
+const { fork } = require('child_process');
+const debug = require('debug')('Thekdar:worker');
+const events = require('./events');
 
 class Worker {
   constructor(type, id) {
@@ -13,10 +13,10 @@ class Worker {
   }
 
   on(handler) {
-    this._worker.on("message", data => {
+    this._worker.on('message', data => {
       handler({
         workerId: this.getId(),
-        ...data
+        ...data,
       });
     });
   }
@@ -37,7 +37,7 @@ class Worker {
   }
 
   addTask(task) {
-    debug("New task added to worker %s", this._id);
+    debug('New task added to worker %s', this._id);
     this.send(events.TASK_ADD, task);
     this._tasks.set(task.getId(), task);
   }
@@ -46,7 +46,7 @@ class Worker {
     const payload = {
       type,
       workerId: this.getId(),
-      task: data
+      task: data,
     };
     if (this._worker) {
       this._worker.send(payload);
