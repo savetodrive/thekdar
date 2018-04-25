@@ -19,7 +19,6 @@ class Thekdar extends EventEmitter {
     this._maxWorkers = 20;
     this._maxTaskPerWorker = 10;
     this._pluggins = [];
-    this.on('info', this.handleInfoMessages);
   }
 
   addPluggin(pluggin) {
@@ -50,6 +49,7 @@ class Thekdar extends EventEmitter {
         return null;
       }
       this._tasks.set(taskId, task);
+      task.setWorkerId(worker.getId());
       worker.addTask(this._tasks.get(taskId));
       this._workerTaskLookup.get(worker.getId()).push(task.getId());
       this.emit('add', { worker });
@@ -134,9 +134,13 @@ class Thekdar extends EventEmitter {
       this.emit('info', { type: 'workers:message', worker, data });
       switch (data.eventType) {
         case 'stop':
-          this._workerTaskLookup.get(data.workerId).forEach((taskId) => {
+          this._workerTaskLookup.get(data.workerId).forEach(taskId => {
             this.handleTaskComplete({ taskId }, worker);
-            this.emit('message', { ...data, taskId, data: { message: 'Worker stopped suddenly.' } });
+            this.emit('message', {
+              ...data,
+              taskId,
+              data: { message: 'Worker stopped suddenly.' },
+            });
           });
           const worker = this._createWorker(worker.getType());
           this._workerTaskLookup.set(data.workerId, []);
@@ -144,13 +148,17 @@ class Thekdar extends EventEmitter {
           break;
         case 'exit':
         case 'crash':
-          this._workerTaskLookup.get(data.workerId).forEach((taskId) => {
+          this._workerTaskLookup.get(data.workerId).forEach(taskId => {
             this.handleTaskComplete({ taskId }, worker);
-            this.emit('message', { ...data, taskId, data: { message: `Sudden ${data.eventType} of worker` } });
+            this.emit('message', {
+              ...data,
+              taskId,
+              data: { message: `Sudden ${data.eventType} of worker` },
+            });
           });
           break;
       }
-    }
+    };
   }
   handleChildMessage(worker) {
     return data => {
@@ -191,7 +199,7 @@ class Thekdar extends EventEmitter {
       const worker = this._workers.get(task.getType()).get(workerId);
       worker.removeTask(taskId);
       this._tasks.delete(taskId);
-      this.emit('info', { type: 'task:deleted', taskId, workerId })
+      this.emit('info', { type: 'task:deleted', taskId, workerId });
       debug('A task deleted with id of %s', taskId);
       return true;
     } catch (er) {
@@ -226,7 +234,7 @@ class Thekdar extends EventEmitter {
       });
       this._workers.get(worker.getType()).delete(workerId);
       this._workerTaskLookup.delete(workerId);
-      this.emit('info', { type: 'workers:removed', worker })
+      this.emit('info', { type: 'workers:removed', worker });
       debug('Worker with id %s has been deleted', worker.getId());
       return worker.kill();
     } catch (e) {

@@ -11,6 +11,7 @@ class Worker {
     this._tasks = new Map();
     this._id = id;
     this._address = null;
+    this.created_at = Date.now();
   }
 
   getWorker() {

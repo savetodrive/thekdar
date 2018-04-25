@@ -3,6 +3,8 @@ class Task {
     this._name = name;
     this.id = null;
     this.type = null;
+    this._workerId = null;
+    this.created_at = Date.now();
   }
 
   setData(message) {
@@ -20,7 +22,9 @@ class Task {
   setId(id) {
     this.id = id;
   }
-
+  setWorkerId(_workerId) {
+    this._workerId = _workerId;
+  }
   getId() {
     return this.id;
   }
