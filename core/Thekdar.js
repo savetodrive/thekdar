@@ -121,7 +121,7 @@ class Thekdar extends EventEmitter {
     worker.setAddress(address);
     worker.create();
     worker.onChildMessage(this.handleChildMessage(worker));
-    // worker.onWorkerMessage(this.handleWorkerMessage(worker));
+    worker.onWorkerMessage(this.handleWorkerMessage(worker));
     debug(
       `New Worker created, previous worker count ${this._workerTaskLookup.size}`
     );
@@ -139,11 +139,14 @@ class Thekdar extends EventEmitter {
             this.emit('message', {
               ...data,
               taskId,
-              data: { message: 'Worker stopped suddenly.' },
+              type: events.TASK_ERROR,
+              data: {
+                message: 'Our worker stopped suddenly, please try again.',
+              },
             });
           });
-          const worker = this._createWorker(worker.getType());
-          this._workerTaskLookup.set(data.workerId, []);
+          const newWorker = this._createWorker(worker.getType());
+          this._workerTaskLookup.set(newWorker.getId(), []);
           this.removeWorker(data.workerId);
           break;
         case 'exit':
@@ -153,7 +156,12 @@ class Thekdar extends EventEmitter {
             this.emit('message', {
               ...data,
               taskId,
-              data: { message: `Sudden ${data.eventType} of worker` },
+              type: events.TASK_ERROR,
+              data: {
+                message: `Sudden ${
+                  data.eventType
+                } of our worker caused your task to be failed, please try again.`,
+              },
             });
           });
           break;
