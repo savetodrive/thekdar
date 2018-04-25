@@ -18,6 +18,12 @@ class Thekdar extends EventEmitter {
     this._workersAddress = new Map();
     this._maxWorkers = 20;
     this._maxTaskPerWorker = 10;
+    this._pluggins = [];
+  }
+
+  addPluggin(pluggin) {
+    this._pluggins.push(pluggin);
+    pluggin.apply(this);
   }
 
   addWorkerAddress(address, workerType) {
@@ -43,9 +49,11 @@ class Thekdar extends EventEmitter {
         return null;
       }
       this._tasks.set(taskId, task);
+      task.setWorkerId(worker.getId());
       worker.addTask(this._tasks.get(taskId));
       this._workerTaskLookup.get(worker.getId()).push(task.getId());
       this.emit('add', { worker });
+      this.emit('info', { type: 'task:new', task, worker });
       debug(`New task added, previous task count ${this._tasks.size}`);
       return worker;
     } catch (error) {
@@ -71,9 +79,10 @@ class Thekdar extends EventEmitter {
       this._workers.set(taskType, new Map());
     }
     for (let i = 0; i < this._maxWorkers; i++) {
-      const worker = this._createWorker(Task.TYPE_FORK, workerAddressIndex);
+      const worker = this._createWorker(taskType, workerAddressIndex);
       this._workerTaskLookup.set(worker.getId(), []);
     }
+    this.emit('info', { type: 'workers:deployed' });
   }
   _getFreeWorker(task, workerTaskLength = 0) {
     if (workerTaskLength === this._maxTaskPerWorker) {
@@ -111,15 +120,49 @@ class Thekdar extends EventEmitter {
     }
     worker.setAddress(address);
     worker.create();
-    worker.on(this.handleWorkerMessage(worker));
+    worker.onChildMessage(this.handleChildMessage(worker));
+    // worker.onWorkerMessage(this.handleWorkerMessage(worker));
     debug(
       `New Worker created, previous worker count ${this._workerTaskLookup.size}`
     );
+    this.emit('info', { type: 'workers:created', worker });
     return worker;
   }
 
   handleWorkerMessage(worker) {
     return data => {
+      this.emit('info', { type: 'workers:message', worker, data });
+      switch (data.eventType) {
+        case 'stop':
+          this._workerTaskLookup.get(data.workerId).forEach(taskId => {
+            this.handleTaskComplete({ taskId }, worker);
+            this.emit('message', {
+              ...data,
+              taskId,
+              data: { message: 'Worker stopped suddenly.' },
+            });
+          });
+          const worker = this._createWorker(worker.getType());
+          this._workerTaskLookup.set(data.workerId, []);
+          this.removeWorker(data.workerId);
+          break;
+        case 'exit':
+        case 'crash':
+          this._workerTaskLookup.get(data.workerId).forEach(taskId => {
+            this.handleTaskComplete({ taskId }, worker);
+            this.emit('message', {
+              ...data,
+              taskId,
+              data: { message: `Sudden ${data.eventType} of worker` },
+            });
+          });
+          break;
+      }
+    };
+  }
+  handleChildMessage(worker) {
+    return data => {
+      this.emit('info', { type: 'child:message', worker, data });
       switch (data.type) {
         case events.TASK_ERROR:
         case events.TASK_REMOVE:
@@ -132,6 +175,7 @@ class Thekdar extends EventEmitter {
   }
 
   handleTaskComplete(data, worker) {
+    this.emit('info', { type: 'task:complete', data, worker });
     return this.removeTask(data.taskId);
   }
   removeTask(taskId) {
@@ -155,6 +199,7 @@ class Thekdar extends EventEmitter {
       const worker = this._workers.get(task.getType()).get(workerId);
       worker.removeTask(taskId);
       this._tasks.delete(taskId);
+      this.emit('info', { type: 'task:deleted', taskId, workerId });
       debug('A task deleted with id of %s', taskId);
       return true;
     } catch (er) {
@@ -189,6 +234,7 @@ class Thekdar extends EventEmitter {
       });
       this._workers.get(worker.getType()).delete(workerId);
       this._workerTaskLookup.delete(workerId);
+      this.emit('info', { type: 'workers:removed', worker });
       debug('Worker with id %s has been deleted', worker.getId());
       return worker.kill();
     } catch (e) {
