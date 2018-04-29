@@ -21,6 +21,13 @@ class Thekdar extends EventEmitter {
     this._pluggins = [];
   }
 
+  stop() {
+    this._pluggins.forEach(plugin => {
+      if (plugin.stop) {
+        plugin.stop();
+      }
+    });
+  }
   addPluggin(pluggin) {
     this._pluggins.push(pluggin);
     pluggin.apply(this);
