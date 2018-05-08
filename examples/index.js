@@ -12,6 +12,11 @@ setInterval(() => {
   });
   task.setType(Task.TYPE_FORK);
   thekdar.addTask(task);
+
+  setTimeout(() => {
+    thekdar.stopTask(task.getId());
+  }, 1000);
+
   thekdar.setMaxTaskPerWorker(10);
   for (let [workerId, works] of thekdar._workerTaskLookup) {
     console.log(workerId, works.length);

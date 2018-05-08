@@ -33,7 +33,7 @@ class Thekdar extends EventEmitter {
 
     return this._workersAddress.get(workerType).push(address);
   }
-  addTask(task, workerAddressIndex = -1) {
+  addTask(task) {
     if (!task) {
       throw new Error('Please provide task object instance of Task Class');
     }
@@ -43,7 +43,7 @@ class Thekdar extends EventEmitter {
     const taskId = uuid();
     task.setId(taskId);
     try {
-      const worker = this._getFreeWorker(task, workerAddressIndex);
+      const worker = this._getFreeWorker(task);
       if (!worker) {
         debug('No Worker found.');
         return null;
@@ -265,6 +265,14 @@ class Thekdar extends EventEmitter {
 
   setMaxTaskPerWorker(maxTaskPerWorker) {
     this._maxTaskPerWorker = maxTaskPerWorker;
+  }
+
+  stopTask(taskId) {
+    const task = this._tasks.get(taskId);
+    const worker = this._workers.get(task.getType()).get(task.getWorkerId());
+    worker.send(events.TASK_STOP, task);
+    debug(`Task stopped: ${taskId}`);
+    this.removeTask(taskId);
   }
 }
 Thekdar.MAX_TASK_PER_WORKER = 10;

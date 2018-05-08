@@ -25,6 +25,11 @@ class Task {
   setWorkerId(_workerId) {
     this._workerId = _workerId;
   }
+
+  getWorkerId() {
+    return this._workerId
+  }
+
   getId() {
     return this.id;
   }
