@@ -11,7 +11,7 @@ setInterval(() => {
     message: 'hello world',
   });
   task.setType(Task.TYPE_FORK);
-  thekdar.addTask(task);
+  thekdar.addTask(task, () => null);
   thekdar.setMaxTaskPerWorker(10);
   for (let [workerId, works] of thekdar._workerTaskLookup) {
     console.log(workerId, works.length);

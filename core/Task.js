@@ -1,7 +1,9 @@
+const uuid = require('uuid');
+
 class Task {
   constructor(name) {
     this._name = name;
-    this.id = null;
+    this.id = uuid();
     this.type = null;
     this._workerId = null;
     this.created_at = Date.now();
@@ -29,8 +31,8 @@ class Task {
     return this.id;
   }
 }
-Task.TYPE_SPAWN = "spawn";
-Task.TYPE_FORK = "fork";
-Task.TYPE_EXEC_FILE = "exec_file";
-Task.TYPE_EXEC = "exec";
+Task.TYPE_SPAWN = 'spawn';
+Task.TYPE_FORK = 'fork';
+Task.TYPE_EXEC_FILE = 'exec_file';
+Task.TYPE_EXEC = 'exec';
 module.exports = Task;
