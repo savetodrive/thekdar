@@ -6,7 +6,6 @@ const BetterQueue = require('better-queue');
 const events = require('./events');
 const Task = require('./Task');
 const Worker = require('./Worker');
-const differenceInMinutes = require('date-fns/difference_in_minutes');
 
 class Thekdar extends EventEmitter {
   constructor(options = {}) {
