@@ -1,13 +1,15 @@
 const uuid = require('uuid');
 const EventEmitter = require('events');
-const events = require('./events');
+const debug = require('debug')('Thekdar:main');
 const util = require('util');
+const BetterQueue = require('better-queue');
+const events = require('./events');
 const Task = require('./Task');
 const Worker = require('./Worker');
-const debug = require('debug')('Thekdar:main');
+const differenceInMinutes = require('date-fns/difference_in_minutes');
 
 class Thekdar extends EventEmitter {
-  constructor() {
+  constructor(options = {}) {
     super();
     // All workers
     this._workers = new Map(); // Workers
@@ -19,8 +21,35 @@ class Thekdar extends EventEmitter {
     this._maxWorkers = 20;
     this._maxTaskPerWorker = 10;
     this._pluggins = [];
+    this._queue = new BetterQueue(this.handleQueue.bind(this), {
+      concurrent: 1,
+      id: 'id',
+      filo: true,
+      maxRetries: 1,
+      retryDelay: 5000,
+      maxTimeout: 15000,
+      ...(options.queue || {}),
+    });
   }
 
+  handleQueue(task, callback) {
+    try {
+      const worker = this._getFreeWorker(task);
+      if (!worker) {
+        return callback('No worker found.');
+      }
+      const taskId = task.id;
+      this._tasks.set(taskId, task);
+      task.setWorkerId(worker.getId());
+      worker.addTask(this._tasks.get(taskId));
+      this._workerTaskLookup.get(worker.getId()).push(task.getId());
+      this.emit('add', { worker });
+      this.emit('info', { type: 'task:new', task, worker });
+      return callback(null, worker);
+    } catch (error) {
+      return callback(error);
+    }
+  }
   stop() {
     this._pluggins.forEach(plugin => {
       if (plugin.stop) {
@@ -40,33 +69,17 @@ class Thekdar extends EventEmitter {
 
     return this._workersAddress.get(workerType).push(address);
   }
-  addTask(task) {
+  addTask(task, callback = () => null) {
     if (!task) {
       throw new Error('Please provide task object instance of Task Class');
     }
     if (!task.getType()) {
       throw new Error('Please provide task type, can be fork, spwan, exec');
     }
-    const taskId = uuid();
-    task.setId(taskId);
-    try {
-      const worker = this._getFreeWorker(task);
-      if (!worker) {
-        debug('No Worker found.');
-        return null;
-      }
-      this._tasks.set(taskId, task);
-      task.setWorkerId(worker.getId());
-      worker.addTask(this._tasks.get(taskId));
-      this._workerTaskLookup.get(worker.getId()).push(task.getId());
-      this.emit('add', { worker });
-      this.emit('info', { type: 'task:new', task, worker });
-      debug(`New task added, previous task count ${this._tasks.size}`);
-      return worker;
-    } catch (error) {
-      debug(error);
-      throw error;
-    }
+
+    this._queue.push(task, (err, result) => {
+      callback(err, result);
+    });
   }
 
   /**
@@ -91,6 +104,7 @@ class Thekdar extends EventEmitter {
     }
     this.emit('info', { type: 'workers:deployed' });
   }
+
   _getFreeWorker(task, workerTaskLength = 0) {
     if (workerTaskLength === this._maxTaskPerWorker) {
       debug(`All worker are working on with maximum work load.`);
