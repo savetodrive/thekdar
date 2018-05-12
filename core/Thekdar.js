@@ -6,7 +6,6 @@ const BetterQueue = require('better-queue');
 const events = require('./events');
 const Task = require('./Task');
 const Worker = require('./Worker');
-const differenceInMinutes = require('date-fns/difference_in_minutes');
 
 class Thekdar extends EventEmitter {
   constructor(options = {}) {
@@ -218,7 +217,7 @@ class Thekdar extends EventEmitter {
       let workerId = null;
       for (const tempWorkerId of workersGroup) {
         const workerTask = this._workerTaskLookup.get(tempWorkerId);
-        const indexOfTask = workerTask.findIndex(id => taskId);
+        const indexOfTask = workerTask.findIndex(id => id === taskId);
         if (indexOfTask > -1) {
           workerId = tempWorkerId;
           workerTask.splice(indexOfTask, 1);

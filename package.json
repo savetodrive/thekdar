@@ -1,6 +1,6 @@
 {
   "name": "thekdar",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -11,7 +11,6 @@
   "license": "ISC",
   "dependencies": {
     "better-queue": "^3.8.7",
-    "date-fns": "^1.29.0",
     "debug": "^3.1.0",
     "respawn": "^2.5.0",
     "uuid": "^3.2.1"
