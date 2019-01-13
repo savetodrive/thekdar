@@ -12,7 +12,7 @@
   "dependencies": {
     "better-queue": "^3.8.7",
     "debug": "^3.1.0",
-    "respawn": "^2.5.0",
+    "respawn": "git://github.com/savetodrive/respawn.git#45098e0",
     "uuid": "^3.2.1"
   },
   "devDependencies": {
