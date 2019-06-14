@@ -1,6 +1,6 @@
 # Thekdar [![Build Status](https://travis-ci.org/savetodrive/thekdar.svg?branch=master)](https://travis-ci.org/savetodrive/thekdar)
 
-Thekdar is module which will manage node child process , it will help us creating workers, distribute task across workers, kill workers or limit there work
+Thekdar is module which will manage node child process , it will help us creating workers, distribute task across workers, kill workers or limit there work.
 
 # Example
 
