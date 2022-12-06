@@ -2400,8 +2400,8 @@ punycode@^2.1.0, punycode@^2.1.1:
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.1.1.tgz#b58b010ac40c22c5657616c8d2c2c02c7bf479ec"
 
 qs@~6.5.2:
-  version "6.5.2"
-  resolved "https://registry.yarnpkg.com/qs/-/qs-6.5.2.tgz#cb3ae806e8740444584ef154ce8ee98d403f3e36"
+  version "6.5.3"
+  resolved "https://registry.yarnpkg.com/qs/-/qs-6.5.3.tgz#3aeeffc91967ef6e35c0e488ef46fb296ab76aad"
 
 randomatic@^3.0.0:
   version "3.1.1"
@@ -2553,9 +2553,10 @@ resolve@1.1.7:
   version "1.1.7"
   resolved "https://registry.yarnpkg.com/resolve/-/resolve-1.1.7.tgz#203114d82ad2c5ed9e8e0411b3932875e889e97b"
 
-"respawn@git://github.com/ojhaujjwal/respawn.git#c940cf5":
+"respawn@git://github.com/savetodrive/respawn.git#45098e0":
   version "2.5.0"
-  resolved "git://github.com/ojhaujjwal/respawn.git#c940cf5788b045597e3363467190f8d676c8a1a0"
+  uid "45098e0c555273188ee2cdfa3b24859ad1e4bd0e"
+  resolved "git://github.com/savetodrive/respawn.git#45098e0c555273188ee2cdfa3b24859ad1e4bd0e"
   dependencies:
     ps-tree "~1.2.0"
     xtend "~2.1.1"
